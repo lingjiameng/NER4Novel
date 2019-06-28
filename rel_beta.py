@@ -2,12 +2,13 @@
 # author： s0mE
 # subject： 人名以及关系提取
 # date： 2019-06-26
-import argparse
-import os
 
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
+
+import jieba
+import jieba.posseg as pseg
 
 from pyhanlp import *
 
@@ -20,7 +21,7 @@ name_dict =[] # ["罗辑","程心","汪淼","叶文洁","史强","维德","云�
 name_dict =[] #["林黛玉","薛宝钗","贾元春","贾迎春","贾探春","贾惜春","李纨","妙玉","史湘云","王熙凤","贾巧姐","秦可卿","晴雯","麝月","袭人","鸳鸯","雪雁","紫鹃","碧痕","平儿","香菱","金钏","司棋","抱琴","赖大","焦大","王善保","周瑞","林之孝","乌进孝","包勇","吴贵","吴新登","邓好时","王柱儿","余信","庆儿","昭儿","兴儿","隆儿","坠儿","喜儿","寿儿","丰儿","住儿","小舍儿","李十儿","玉柱儿","贾敬","贾赦","贾政","贾宝玉","贾琏","贾珍","贾环","贾蓉","贾兰","贾芸","贾蔷","贾芹","琪官","芳官","藕官","蕊官","药官","玉官","宝官","龄官","茄官","艾官","豆官","葵官","妙玉","智能","智通","智善","圆信","大色空","净虚","彩屏","彩儿","彩凤","彩霞","彩鸾","彩明","彩云","贾元春","贾迎春","贾探春","贾惜春","薛蟠","薛蝌","薛宝钗","薛宝琴","王夫人","王熙凤","王子腾","王仁","尤老娘","尤氏","尤二姐","尤三姐","贾蓉","贾兰","贾芸","贾芹","贾珍","贾琏","贾环","贾瑞","贾敬","贾赦","贾政","贾敏","贾代儒","贾代化","贾代修","贾代善","晴雯","金钏","鸳鸯","司棋","詹光","单聘仁","程日兴","王作梅","石呆子","张华","冯渊","张金哥","茗烟","扫红","锄药","伴鹤","小鹊","小红","小蝉","小舍儿","刘姥姥","马道婆","宋嬷嬷","张妈妈","秦锺","蒋玉菡","柳湘莲","东平王","乌进孝","冷子兴","山子野","方椿","载权","夏秉忠","周太监","裘世安","抱琴","司棋","侍画","入画","珍珠","琥珀","玻璃","翡翠","史湘云","翠缕","笑儿","篆儿贾探春","侍画","翠墨","小蝉","贾宝玉","茗烟","袭人","晴雯","林黛玉","紫鹃","雪雁","春纤","贾惜春","入画","彩屏","彩儿","贾迎春","彩凤","彩云","彩霞"] 
 
 class hanlp(object):
-    def __init__(self, analyzer = "Perceptron", custom_dict = False ):
+    def __init__(self, analyzer = "Perceptron"):
         ## 数据集目录
         data_path = "/home/dream/miniconda3/envs/py37/lib/python3.7/site-packages/pyhanlp/static/data/model/perceptron/large/cws.bin"
         
@@ -38,9 +39,9 @@ class hanlp(object):
         
         self.analyzer = self.PLAnalyzer
         if analyzer=="Perceptron":
-            self.analyzer = self.PLAnalyzer.enableCustomDictionary(custom_dict)
+            self.analyzer = self.PLAnalyzer
         elif analyzer=="CRF":
-            self.analyzer = self.CRFLAnalyzer.enableCustomDictionary(custom_dict)
+            self.analyzer = self.CRFLAnalyzer
         
     def cut(self, words):
         res = []
@@ -50,28 +51,20 @@ class hanlp(object):
             terms = self.analyzer.seg(words)
         for term in terms:
             res.append( (str(term.word),str(term.nature)) )
+
         return res
     
     @classmethod
     def add(self,names_list):
         for n in name_dict:
-            CustomDictionary.add(n,"nr 1")
+            CustomDictionary.add(n,"nr")
 
-    @classmethod
-    def insert(self, names_list):
-        for n in name_dict:
-            CustomDictionary.insert(n, "nr 1")
-            
 def count_names(fp,model):
     """
     统计文本中的所有名字，返回统计矩阵
     """
     #逐行提取名字
-    name_set = set() # 所有名字的集合
-    
-    
-    nr_nrf_dict = {"nr":{},"nrf":{}}
-
+    name_set = set()
     cut_result = []         
     with open(fp, "r") as f:
         lines = f.readlines()
@@ -85,17 +78,13 @@ def count_names(fp,model):
             line_dict = {}
 
             for word, flag in words:
-                # if word == "夤夜":
+                # if word == "。家珍":
                 #     print(word,flag,"|||",line)
                 
                 if flag == "nr" or flag == "nrf":# or flag == "j":
                     # 如果 word 是人名，加入人名的统计中
                     line_dict[word] = line_dict.get(word, 0) + 1
                     name_set.add(word)
-
-                    # 分中文名和英文名统计名称
-                    nr_nrf_dict[flag][word] = nr_nrf_dict[flag].get(word, 0) + 1
-                    
             if len(line_dict) != 0:
                 cut_result.append(line_dict)
 
@@ -118,13 +107,7 @@ def count_names(fp,model):
     #### 例如明显的错误名字，以及同一人物不同的别称需要进一步处理 ###
     ################需要后续的处理 #######################
     print("==============Processing end!============")
-    return rel, names, nr_nrf_dict
-
-def filte_nr(nr_nrf_dict):
-    """
-    自动生成可信名称和名字转换列表
-    """
-    pass
+    return rel, names
 
 
 def filter_names(rel, names, trans={}, err=[], threshold=0):
@@ -205,37 +188,38 @@ def plot_rel(relations, names):
     plt.show()
 
 
-
-parser =  argparse.ArgumentParser(description="指定书的名字")
-
-parser.add_argument("--book", default="weicheng", type=str,
-                    help="书的名字，不带后缀")
-
-
 if __name__ == "__main__":
+    # jieba.load_userdict("user_dict.txt")
+    fp = "book/shbl.txt" #"白夜行.txt"  #"santi.txt"
 
-    # 获取书名参数
-    args = parser.parse_args()
-    fp = "book/"+ args.book +".txt"
-    assert os.path.exists(fp),"error!: no such book in "+ fp
-
-    # 插入个性化字典
-    name_dict = []
+    # name_dict = ["秦无夜","夤夜","萧轻芜","罗千雪","石磊","玉麟"]
     hanlp.add(name_dict)
-    
     # 感知机
-    model = hanlp(custom_dict=True)
-    rels, ns, nr_nrf_dict = count_names(fp, model)
-    
-    ## 分别生成新的名称字典，以及转换字典
-    nr_dict = nr_nrf_dict["nr"]
-    print(sorted(nr_dict.items(),key=lambda d:d[1],reverse=True))
+    model = hanlp()
+    rels, ns = count_names(fp, model)
+
+    # CRF
+    model = hanlp(analyzer="CRF")
+    _rels,_ns = count_names(fp,model)
+
+    #　先过滤再融合
+    rels1, ns1 = filter_names(rels, ns)
+    rels2, ns2 = filter_names(_rels, _ns)
+    print( ns1,ns2)
+    print(ns1[np.in1d(ns1,ns2)])
+
+    # 融合后过滤
+    f = np.in1d(ns, _ns)
+    threshold = 5
+    print("="*50)
+    print(ns[f])
+    rel_f, ns_f = filter_names(rels[f, :][:, f], ns[f],threshold=threshold)
+    print( ns_f)
+
+    #################################################
 
 
-
-    # 手动调整的翻译字典
     trans_dict = {}
-    # 错误名称
     err_list = []
 
     threshold = 0
