@@ -50,7 +50,7 @@ class hanlp(object):
         return res
 
 
-txt = txt7
+txt = txt3
 # 默认分词
 print(HanLP.segment(txt))  
 
@@ -75,21 +75,22 @@ data_path = "/home/dream/miniconda3/envs/py37/lib/python3.7/site-packages/pyhanl
 PerceptronLexicalAnalyzer = JClass('com.hankcs.hanlp.model.perceptron.PerceptronLexicalAnalyzer')
 analyzer = PerceptronLexicalAnalyzer(data_path,
                                     HanLP.Config.PerceptronPOSModelPath,
-                                    HanLP.Config.PerceptronNERModelPath)
+                                     HanLP.Config.PerceptronNERModelPath)
 print(analyzer.seg(txt))
 print(analyzer.analyze(txt))
 
 
 print("="*50)
 analyzer = PerceptronLexicalAnalyzer()
-CustomDictionary.add("凤霞","nr")
+# CustomDictionary.add("凤霞","nr")
 percep_seg = analyzer.seg(txt)
 print(percep_seg)
 # print(analyzer.analyze(txt))
 
 # CRF词法分析器
 print("="*50)
-analyzer = JClass('com.hankcs.hanlp.model.crf.CRFLexicalAnalyzer')()
+analyzer = JClass('com.hankcs.hanlp.model.crf.CRFLexicalAnalyzer')(
+).enableJapaneseNameRecognize(True)
 crf_seg = analyzer.seg(txt)
 print(crf_seg)
 # print(analyzer.analyze(txt))

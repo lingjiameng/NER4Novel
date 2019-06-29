@@ -15,12 +15,8 @@ plt.rcParams["font.sans-serif"] = ["SimHei"]  # 用来正常显示中文标签
 plt.rcParams["axes.unicode_minus"] = False  # 用来正常显示负号
 
 
-name_dict =[] # ["罗辑","程心","汪淼","叶文洁","史强","维德","云天明","希恩斯","雷迪亚兹","丁仪","泰勒","章北海","关一帆","文洁","北海","天明","一帆","伟思","文斯","卫宁","始皇","心说","文王","玉菲","志成","西里","晓明","哲泰","庄颜","墨子","杨晋文","晋文","慈欣","沐霖","张援朝","援朝","艾AA","AA"]
-
-name_dict =[] #["林黛玉","薛宝钗","贾元春","贾迎春","贾探春","贾惜春","李纨","妙玉","史湘云","王熙凤","贾巧姐","秦可卿","晴雯","麝月","袭人","鸳鸯","雪雁","紫鹃","碧痕","平儿","香菱","金钏","司棋","抱琴","赖大","焦大","王善保","周瑞","林之孝","乌进孝","包勇","吴贵","吴新登","邓好时","王柱儿","余信","庆儿","昭儿","兴儿","隆儿","坠儿","喜儿","寿儿","丰儿","住儿","小舍儿","李十儿","玉柱儿","贾敬","贾赦","贾政","贾宝玉","贾琏","贾珍","贾环","贾蓉","贾兰","贾芸","贾蔷","贾芹","琪官","芳官","藕官","蕊官","药官","玉官","宝官","龄官","茄官","艾官","豆官","葵官","妙玉","智能","智通","智善","圆信","大色空","净虚","彩屏","彩儿","彩凤","彩霞","彩鸾","彩明","彩云","贾元春","贾迎春","贾探春","贾惜春","薛蟠","薛蝌","薛宝钗","薛宝琴","王夫人","王熙凤","王子腾","王仁","尤老娘","尤氏","尤二姐","尤三姐","贾蓉","贾兰","贾芸","贾芹","贾珍","贾琏","贾环","贾瑞","贾敬","贾赦","贾政","贾敏","贾代儒","贾代化","贾代修","贾代善","晴雯","金钏","鸳鸯","司棋","詹光","单聘仁","程日兴","王作梅","石呆子","张华","冯渊","张金哥","茗烟","扫红","锄药","伴鹤","小鹊","小红","小蝉","小舍儿","刘姥姥","马道婆","宋嬷嬷","张妈妈","秦锺","蒋玉菡","柳湘莲","东平王","乌进孝","冷子兴","山子野","方椿","载权","夏秉忠","周太监","裘世安","抱琴","司棋","侍画","入画","珍珠","琥珀","玻璃","翡翠","史湘云","翠缕","笑儿","篆儿贾探春","侍画","翠墨","小蝉","贾宝玉","茗烟","袭人","晴雯","林黛玉","紫鹃","雪雁","春纤","贾惜春","入画","彩屏","彩儿","贾迎春","彩凤","彩云","彩霞"] 
-
 class hanlp(object):
-    def __init__(self, analyzer = "Perceptron", custom_dict = False ):
+    def __init__(self, analyzer = "Perceptron", custom_dict = True ):
         ## 数据集目录
         data_path = "/home/dream/miniconda3/envs/py37/lib/python3.7/site-packages/pyhanlp/static/data/model/perceptron/large/cws.bin"
         
@@ -54,12 +50,17 @@ class hanlp(object):
     
     @classmethod
     def add(self,names_list):
-        for n in name_dict:
-            CustomDictionary.add(n,"nr 1")
+        for n in names_list:
+            if CustomDictionary.get(n) is None:
+                CustomDictionary.add(n,"nr 1000 ")
+            else:
+                attr = "nr 1000 " + str(CustomDictionary.get(n))
+                # attr = "nr 1000 "
+                CustomDictionary.insert(n,attr)
 
     @classmethod
     def insert(self, names_list):
-        for n in name_dict:
+        for n in names_list:
             CustomDictionary.insert(n, "nr 1")
             
 def count_names(fp,model):
@@ -76,7 +77,7 @@ def count_names(fp,model):
     with open(fp, "r") as f:
         lines = f.readlines()
         for ith, line in enumerate(lines):
-            if ith % 200 == 0:  # 显示处理进度
+            if ith % 1000 == 0:  # 显示处理进度
                 print("Processing:{:.5f}".format(ith*1.0/len(lines)))
             #每一行做预处理
             line = line.strip().replace(" ","")
@@ -85,7 +86,7 @@ def count_names(fp,model):
             line_dict = {}
 
             for word, flag in words:
-                # if word == "夤夜":
+                # if word == "张":
                 #     print(word,flag,"|||",line)
                 
                 if flag == "nr" or flag == "nrf":# or flag == "j":
@@ -120,14 +121,61 @@ def count_names(fp,model):
     print("==============Processing end!============")
     return rel, names, nr_nrf_dict
 
-def filte_nr(nr_nrf_dict):
-    """
-    自动生成可信名称和名字转换列表
-    """
-    pass
 
+def filter_nr(nr_nrf_dict, threshold = -1,first=False):
+    """
+    自动生成可信名称列表 和 名字转换字典
+    """
+    nr_dict = nr_nrf_dict["nr"]
+    nrf_dict = nr_nrf_dict["nrf"]
+    
+    first_threshold = 5
+    if threshold == -1:
+        threshold = np.mean( list(nr_dict.values())+list(nrf_dict.values()))
+        first_threshold = max(np.sqrt(len(nr_dict)+len(nrf_dict)),5*threshold)
+    print("auto_dict threshold:{:.3f}".format(threshold))
+    names = []
+    trans_dict = {}
+    last_names = []
+    last_repeat = []
 
-def filter_names(rel, names, trans={}, err=[], threshold=0):
+    first_names = []
+    first_repeat = []
+    for name,value in sorted(nr_dict.items(), key=lambda d: d[1], reverse=True):
+        if value > threshold:
+            if len(name) == 1 and value < first_threshold:
+                continue
+            names.append(name)
+            last_name = name[1:]
+            # 获取三字姓名的名字的部分，如果存在重复的删除
+            if len(name)==3 and not last_name in last_repeat:
+                if last_name in last_names:
+                    last_names.remove(last_name)
+                    trans_dict.pop(last_name)
+                    last_repeat.append(last_name)
+                else:
+                    trans_dict[last_name] = name
+                    last_names.append(last_name)
+            
+            # 获取姓名的姓的部分
+            first_name = name[:1]
+            if first and len(name)==3 and not first_name in first_repeat:
+                if first_name in first_names:
+                    first_names.remove(first_name)
+                    trans_dict.pop(first_name)
+                    first_repeat.append(first_name)
+                else:
+                    trans_dict[first_name] = name
+                    first_names.append(first_name)
+        
+    names = last_names + names
+    # print(names)
+    for name,value in nrf_dict.items():
+        if value > threshold:
+            names.append(name)
+    return names,trans_dict
+
+def filter_names(rel, names, trans={}, err=[], threshold= -1):
     """对结果进行精细的调整与过滤
 
     处理顺序: 转换 ==> 去错 ==> 过滤 ==> 排序
@@ -137,7 +185,7 @@ def filter_names(rel, names, trans={}, err=[], threshold=0):
         names: 人名向量矩阵 n
         trans: 别称转换字典 将别称转换为统一名字
         err: 错误名称矩阵 要删除的错误名称列表
-        threshold: 词频阈值 词频低于此阈值的名字会被过滤，等于0（default）时使用词频均值自动过滤，等于-1不过滤
+        threshold: 词频阈值 词频低于此阈值的名字会被过滤，等于-1（default）时使用词频均值自动过滤
     
     Returns:
         rel_filter
@@ -165,12 +213,12 @@ def filter_names(rel, names, trans={}, err=[], threshold=0):
         rel = rel[indexes, :][:, indexes]
 
     # 过滤掉低频的名字
-    if threshold != -1:
-        if threshold == 0:
+    if threshold != 0:
+        if threshold == -1:
             rel_threshold = max(rel.diagonal().mean(), threshold)
         else:
             rel_threshold = threshold
-        print("threshold:{:.3f}".format(rel_threshold))
+        print("out threshold:{:.3f}".format(rel_threshold))
         rel_filter = np.diag(rel) > rel_threshold
         names = names[rel_filter]
         rel = rel[rel_filter, :][:, rel_filter]
@@ -188,6 +236,7 @@ def plot_rel(relations, names):
 
     # 过滤掉孤立的名字
     relations =relations.astype(np.float)
+    
 
     # 画图
     G = nx.Graph()
@@ -201,8 +250,17 @@ def plot_rel(relations, names):
 
     weights = np.array(weights)
     weights = weights*5.0/np.max(weights)
+    # 总体图
     nx.draw(G, with_labels=True, node_size=sizes, width=weights)
-    plt.show()
+
+
+    # 判断是否联通并决定是否切分子图
+    if not nx.is_connected(G):
+        for c in sorted(nx.connected_components(G),key=len,reverse=True):
+            print(G.subgraph(c))
+            print(type(c))
+            print(len(c))
+
 
 
 
@@ -212,33 +270,77 @@ parser.add_argument("--book", default="weicheng", type=str,
                     help="书的名字，不带后缀")
 
 
+
+# ["罗辑","程心","汪淼","叶文洁","史强","维德","云天明","希恩斯","雷迪亚兹","丁仪","泰勒","章北海","关一帆","文洁","北海","天明","一帆","伟思","文斯","卫宁","始皇","心说","文王","玉菲","志成","西里","晓明","哲泰","庄颜","墨子","杨晋文","晋文","慈欣","沐霖","张援朝","援朝","艾AA","AA"]
+
+# info = ["林黛玉","薛宝钗","贾元春","贾迎春","贾探春","贾惜春","李纨","妙玉","史湘云","王熙凤","贾巧姐","秦可卿","晴雯","麝月","袭人","鸳鸯","雪雁","紫鹃","碧痕","平儿","香菱","金钏","司棋","抱琴","赖大","焦大","王善保","周瑞","林之孝","乌进孝","包勇","吴贵","吴新登","邓好时","王柱儿","余信","庆儿","昭儿","兴儿","隆儿","坠儿","喜儿","寿儿","丰儿","住儿","小舍儿","李十儿","玉柱儿","贾敬","贾赦","贾政","贾宝玉","贾琏","贾珍","贾环","贾蓉","贾兰","贾芸","贾蔷","贾芹","琪官","芳官","藕官","蕊官","药官","玉官","宝官","龄官","茄官","艾官","豆官","葵官","妙玉","智能","智通","智善","圆信","大色空","净虚","彩屏","彩儿","彩凤","彩霞","彩鸾","彩明","彩云","贾元春","贾迎春","贾探春","贾惜春","薛蟠","薛蝌","薛宝钗","薛宝琴","王夫人","王熙凤","王子腾","王仁","尤老娘","尤氏","尤二姐","尤三姐","贾蓉","贾兰","贾芸","贾芹","贾珍","贾琏","贾环","贾瑞","贾敬","贾赦","贾政","贾敏","贾代儒","贾代化","贾代修","贾代善","晴雯","金钏","鸳鸯","司棋","詹光","单聘仁","程日兴","王作梅","石呆子","张华","冯渊","张金哥","茗烟","扫红","锄药","伴鹤","小鹊","小红","小蝉","小舍儿","刘姥姥","马道婆","宋嬷嬷","张妈妈","秦锺","蒋玉菡","柳湘莲","东平王","乌进孝","冷子兴","山子野","方椿","载权","夏秉忠","周太监","裘世安","抱琴","司棋","侍画","入画","珍珠","琥珀","玻璃","翡翠","史湘云","翠缕","笑儿","篆儿贾探春","侍画","翠墨","小蝉","贾宝玉","茗烟","袭人","晴雯","林黛玉","紫鹃","雪雁","春纤","贾惜春","入画","彩屏","彩儿","贾迎春","彩凤","彩云","彩霞"] 
+
+# hanlp.add(info)
+
+
+
 if __name__ == "__main__":
 
+    # a = str(CustomDictionary.get("鸿渐"))
+    # print(a=="nz 3 ")
+    #################################################
+    # ############################################# 
+    # ############# 手动调整模型 ####################
+    # 前期添加的字典
+    name_dict = []
+    
+    # 后期效果优化
+    
+    trans_dict = {}
+
+    err_list = []
+
+    threshold = -1
+    # ############################################
+    # ############################################
+    
     # 获取书名参数
     args = parser.parse_args()
     fp = "book/"+ args.book +".txt"
     assert os.path.exists(fp),"error!: no such book in "+ fp
 
+    ###################################33
+    ###############################
     # 插入个性化字典
-    name_dict = []
+    # name_dict = []
     hanlp.add(name_dict)
+    #################################
+    #################################
     
     # 感知机
     model = hanlp(custom_dict=True)
     rels, ns, nr_nrf_dict = count_names(fp, model)
     
+    f = np.diag(rels) >= 40
+    print(len(ns),ns[f],np.diag(rels)[f])
+    print("="*50)
+
     ## 分别生成新的名称字典，以及转换字典
-    nr_dict = nr_nrf_dict["nr"]
-    print(sorted(nr_dict.items(),key=lambda d:d[1],reverse=True))
-
-
-
-    # 手动调整的翻译字典
-    trans_dict = {}
-    # 错误名称
-    err_list = []
-
-    threshold = 0
+    # print(filter_nr(nr_nrf_dict))
+    auto_name_list, auto_trans_dict = filter_nr(nr_nrf_dict,first=True)
+    
+    print(auto_name_list,auto_trans_dict)
+    hanlp.add(auto_name_list)
+    
+          
+    ############################################
+    # 手动调整的转换字典
+    auto_trans_dict.update(trans_dict)
+    trans_dict = auto_trans_dict
+    ###############################################
+    
+    
+    ### 重新进行统计和计数
+    model = hanlp(custom_dict=True)#,analyzer="CRF")
+    rels,ns,_ = count_names(fp,model)
+  
+    #####根据手工调整以不同效果展示
+    
 
     relations, names = filter_names(rels, ns, trans=trans_dict, err=err_list, threshold=threshold)
     print(names,np.diag(relations))
