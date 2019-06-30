@@ -5,13 +5,13 @@
 import argparse
 import os
 
+from tqdm import tqdm
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
-
 from pyhanlp import *
 
-from tqdm import tqdm
+
 
 plt.rcParams["font.sans-serif"] = ["SimHei"]  # 用来正常显示中文标签
 plt.rcParams["axes.unicode_minus"] = False  # 用来正常显示负号
@@ -329,7 +329,7 @@ if __name__ == "__main__":
     
     trans_dict = {}
     trans_dict.update(trans_list2dict(trans_list))
-    
+
     err_list = []
 
     threshold = -1

@@ -1,4 +1,30 @@
-# 一个文章人名提取项目
+# 小说人名关系提取
+
+## 特点
+
+直接使用hanlp训练好的模型，无专门自定义人名字典
+自动人名统计，部分人名简称转换
+
+## 环境
+
+python 3.7
+python lib：
+
+- tqdm
+- numpy
+- networkx
+- matplotlib
+- pyhanlp
+
+## 使用方法
+
+1. 将书以txt后缀保存在`book`目录下，并且以 utf-8 格式保存
+
+2. 运行如下命令
+
+```bash
+python rel.py --book book_name #注意没有txt后缀
+```
 
 ## 分词模型对比
 
