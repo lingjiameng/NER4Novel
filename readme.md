@@ -26,6 +26,22 @@ python lib：
 python rel.py --book book_name #注意没有txt后缀
 ```
 
+## 运行结果展示
+
+### 平凡的世界
+
+![pfdsj](readme/pfdsj.png)
+
+![pfdsj2](readme/pfdsj2.png)
+
+
+
+
+
+![pfdsj3](readme/pfdsj3.png)
+
+### 三体
+
 ## 分词模型对比
 
 - thulac 清华，大模型下载困难，小模型词性标注效果较差
