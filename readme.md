@@ -42,6 +42,16 @@ python rel.py --book book_name #注意没有txt后缀
 
 ### 三体
 
+![santi](readme/santi.png)
+
+![santi2](readme/santi2.png)
+
+
+
+![santi3](readme/santi3.png)
+
+
+
 ## 分词模型对比
 
 - thulac 清华，大模型下载困难，小模型词性标注效果较差
