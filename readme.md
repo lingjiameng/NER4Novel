@@ -34,10 +34,6 @@ python rel.py --book book_name #注意没有txt后缀
 
 ![pfdsj2](readme/pfdsj2.png)
 
-
-
-
-
 ![pfdsj3](readme/pfdsj3.png)
 
 ### 三体
@@ -46,11 +42,7 @@ python rel.py --book book_name #注意没有txt后缀
 
 ![santi2](readme/santi2.png)
 
-
-
 ![santi3](readme/santi3.png)
-
-
 
 ## 分词模型对比
 
@@ -60,15 +52,11 @@ python rel.py --book book_name #注意没有txt后缀
 - pynlpir 中科院，标注太奇怪，弃用
 - pyltp 哈工大
 
-
-
 ## 处理过程
 
 增加人名词典，提高人名占比
 
 能否自动发现新的人名？
-
-
 
 ## 一些值得考虑的问题
 
@@ -87,9 +75,8 @@ python rel.py --book book_name #注意没有txt后缀
 但是对于偶尔出现的人名怎么处理?
 
 **3.识别结果名称的可信度？**
+
 根据名称列表的长度，每个名字出现的次数，以及切分出的名字的可信度？
-
-
 
 ## 任务
 
