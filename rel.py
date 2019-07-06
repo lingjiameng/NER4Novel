@@ -75,30 +75,37 @@ def count_names(fp,model):
     
     nr_nrf_dict = {"nr":{},"nrf":{}}
 
-    cut_result = []         
-    with open(fp, "r") as f:
-        lines = f.readlines()
-        for line in tqdm(lines, desc="Analyzing"):
-            #每一行做预处理
-            line = line.strip().replace(" ","")
+    cut_result = []
+    lines = []
 
-            words = model.cut(line)
-            line_dict = {}
+    try:
+        with open(fp, "r") as f:
+            lines = f.readlines()
+    except UnicodeDecodeError:
+        with open(fp,"r",encoding="gbk") as f:
+            lines = f.readlines()
 
-            for word, flag in words:
-                # if word == "张":
-                #     print(word,flag,"|||",line)
+    for line in tqdm(lines, desc="Analyzing"):
+        #每一行做预处理
+        line = line.strip().replace(" ","")
+
+        words = model.cut(line)
+        line_dict = {}
+
+        for word, flag in words:
+            # if word == "张":
+            #     print(word,flag,"|||",line)
+            
+            if flag == "nr" or flag == "nrf":# or flag == "j":
+                # 如果 word 是人名，加入人名的统计中
+                line_dict[word] = line_dict.get(word, 0) + 1
+                name_set.add(word)
+
+                # 分中文名和英文名统计名称
+                nr_nrf_dict[flag][word] = nr_nrf_dict[flag].get(word, 0) + 1
                 
-                if flag == "nr" or flag == "nrf":# or flag == "j":
-                    # 如果 word 是人名，加入人名的统计中
-                    line_dict[word] = line_dict.get(word, 0) + 1
-                    name_set.add(word)
-
-                    # 分中文名和英文名统计名称
-                    nr_nrf_dict[flag][word] = nr_nrf_dict[flag].get(word, 0) + 1
-                    
-            if len(line_dict) != 0:
-                cut_result.append(line_dict)
+        if len(line_dict) != 0:
+            cut_result.append(line_dict)
 
     # 名字关系矩阵计算
     names = list(name_set)  # 所有名字的列表
@@ -234,7 +241,7 @@ def filter_names(rel, names, trans={}, err=[], threshold= -1):
     return rel, names
 
 
-def plot_rel(relations, names,balanced=True):
+def plot_rel(relations, names, draw_all=True, balanced=True, verbose=True):
 
     # 平衡名字关系
     if balanced == True:
@@ -267,26 +274,35 @@ def plot_rel(relations, names,balanced=True):
         max_weight = max(np.max(sub_weight), max_weight)
         sub_weight = sub_weight*4.5/max_weight
 
+    #主要子图外其他的图
+    other_c = set(G.nodes) - main_c
+
+    #最终结果信息
+    info = "<<shown-points>>\n{}\n<<dropout-points>>\n{}".format(
+        sub_G.nodes(data="num"), G.subgraph(other_c).nodes(data="num"))
+    
+    if verbose == True:
+        print("="*50)
+        print("+++++++ 最终分析结果: +++++++")
+        print(info)
+        print("="*50)
+
+    #多种方式展示结果
     # nx.draw(sub_G, with_labels=True, node_size=sub_nums, width=sub_weight)
     # plt.show()
     nx.draw_spring(sub_G, with_labels=True, node_size=sub_nums, width=sub_weight)
     plt.show()
-    nx.draw_circular(sub_G, with_labels=True, node_size=sub_nums, width=sub_weight)
-    plt.show()
-    nx.draw_random(sub_G, with_labels=True, node_size=sub_nums, width=sub_weight)
-    plt.show()
-    nx.draw_spectral(sub_G, with_labels=True, node_size=sub_nums, width=sub_weight)
-    plt.show()
-    nx.draw_kamada_kawai(sub_G, with_labels=True, node_size=sub_nums, width=sub_weight)
-    # plt.show()
+    if draw_all==True:
+        nx.draw_circular(sub_G, with_labels=True, node_size=sub_nums, width=sub_weight)
+        plt.show()
+        nx.draw_random(sub_G, with_labels=True, node_size=sub_nums, width=sub_weight)
+        plt.show()
+        nx.draw_spectral(sub_G, with_labels=True, node_size=sub_nums, width=sub_weight)
+        plt.show()
+        nx.draw_kamada_kawai(sub_G, with_labels=True, node_size=sub_nums, width=sub_weight)
+        plt.show()
     # nx.draw_shell(sub_G, with_labels=True, node_size=sub_nums, width=sub_weight)
     # plt.show()
-    #主要子图外其他的图
-    other_c = set(G.nodes) - main_c
-
-    info = "<<shown-points>>\n{}\n<<dropout-points>>\n{}".format(
-        sub_G.nodes(data="num"), G.subgraph(other_c).nodes(data="num"))
-    return info
 
 def trans_list2dict(trans_list):
     """
@@ -381,16 +397,12 @@ if __name__ == "__main__":
     model = hanlp(custom_dict=True)#,analyzer="CRF")
     rels,ns,_ = count_names(fp,model)
   
-    #####根据手工调整以不同效果展示
+    ##### 根据手工调整以不同效果展示
     relations, names = filter_names(
             rels, ns, trans=trans_dict, err=err_list, threshold=threshold)
     # print(names, np.diag(relations))
-    plt.subplot(111)
-    info = plot_rel(relations,names)
-    print("="*50)
-    print("+++++++ 最终分析结果: +++++++")
-    print(info)
-    print("="*50)
-    plt.show()
+
+    ##### 展示最终结果和信息
+    plot_rel(relations,names)
 
    
